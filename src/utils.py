@@ -8,51 +8,40 @@ from typing import Dict, List, Optional, Any
 
 
 def bar_plot(
-        df: pd.DataFrame, feature: str,
+        df: pd.DataFrame,
         figsize: tuple = (12, 5),
         rotation: int = 90,
         fontsize: int = 14,
-        y: str = 'count') -> None:
+        palette_color: list = []) -> None:
     """
     Plots a bar chart of the counts of repositories per feature. This is useful for visualizing the
     distribution of repository counts for any given feature (e.g. programming language, country, etc.).
 
-    Args:
+    Parameters
+    ----------
         - df (pd.DataFrame): DataFrame containing the feature and count columns.
-        - feature (str): Name of the feature to plot.
         - rotation (int): Rotation angle for the x-axis labels.
         - fontsize (int): Font size for the title and labels.
+        - palette_color (list): A list of colors to use for the bars.
     """
-
-    if df is None:
-        raise ValueError("Input DataFrame is null")
-
-    if feature not in df.columns:
-        raise KeyError(f"Column '{feature}' not found in DataFrame")
+    feature = str(df.columns[0])
+    y = str(df.columns[1])
 
     # Create a color palette for the bar chart
-    palette_color = sns.color_palette('RdBu', len(df))
+    if len(palette_color) == 0:
+        palette_color = sns.color_palette('RdBu', len(df))
 
-    # Create the figure and set its size
     plt.figure(figsize=figsize)
+    bar_plot = sns.barplot(x=feature, y=y, data=df, palette=palette_color)
 
-    # Create the bar plot
-    bar_plot = sns.barplot(x=feature, y=y,
-                           data=df, palette=palette_color)
-
-    # Set the x-axis labels and title
     plt.xticks(rotation=rotation, fontsize=fontsize-2)
-
-    plt.title(
-        f'Counts of Repositories per {feature}'.title(),
-        fontsize=fontsize + 2, y=1.1
-    )
-
+    plt.title(f'Repositories per {feature}'.title(),
+              fontsize=fontsize + 2, y=1.1)
     plt.xlabel(feature.title(), fontsize=fontsize, labelpad=12)
-    plt.ylabel('Number of Repos', fontsize=fontsize, labelpad=12)
+    plt.ylabel(y.title(), fontsize=fontsize, labelpad=12)
 
     # Get the total count of repositories
-    total_count = df['count'].sum()
+    total_count = df[y].sum()
 
     # Add percentage labels to each bar
     for patch in bar_plot.patches:
@@ -73,12 +62,54 @@ def bar_plot(
     plt.show()
 
 
-def top_ranked_repos(df, feature, figsize=(15, 6), n=20, rotation=45):
+def plot_histograms(data, columns, palette_color, figsize=(15, 4)):
+    """
+    Plot histograms for the given columns in the data.
 
+    Parameters
+    ----------
+        - data (pandas.DataFrame): The DataFrame containing the data to plot.
+        - columns (list): A list of column names to plot.
+        - palette_color (list) : A list of colors to use for the histograms.
+        - figsize (tuple): The size of the figure in inches, by default (15, 4)
+    """
+    fig, axes = plt.subplots(1, len(columns), figsize=figsize)
+
+    # Iterate over the columns and plot the histogram for each one
+    for i, column in enumerate(columns):
+        axes[i].hist(data[column], color=palette_color[i])
+        axes[i].set_title(f"Distribution of {column}")
+        axes[i].set_xlabel(f"Number of {column}")
+        axes[i].set_ylabel("Frequency")
+
+    # Make sure the plot looks nice and isn't too squished
+    plt.tight_layout()
+    plt.show()
+
+
+def top_ranked_repos(df, feature,
+                     figsize=(15, 6),
+                     n=20, rotation=45):
+    """
+    Plot the top n repositories in Egyptian Open Source projects according to the number of given feature.
+
+    Parameters:
+    ----------
+        - df (pandas.DataFrame): The DataFrame containing the data of the repositories.
+        - feature (str): The column name of the feature to rank the repositories by. 
+        - figsize (tuple): The size of the figure in inches, by default (15, 6).
+        - n (int): The number of top repositories to show, by default 20.
+        - rotation (int): The rotation of the x-axis labels, by default 45.
+    Returns:
+    --------
+        - top_repos (pandas.DataFrame): A DataFrame containing the top n repositories.
+    """
     palette_color = sns.color_palette('RdBu', 10)
     plt.figure(figsize=figsize)
 
+    # Get the top n repositories
     top_repos = df.sort_values(by=feature, ascending=False).head(n)
+
     sns.barplot(x=top_repos['repo_name'],
                 y=top_repos[feature], palette=palette_color)
 
@@ -87,6 +118,7 @@ def top_ranked_repos(df, feature, figsize=(15, 6), n=20, rotation=45):
 
     plt.xlabel("Repository Name", fontsize=16)
     plt.ylabel(f"{feature}", fontsize=16)
+
     plt.xticks(rotation=rotation, ha="right", fontsize=12)
     plt.tight_layout()
     plt.show()

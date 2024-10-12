@@ -19,6 +19,7 @@ __pypackages__/
 # Data files
 data/  # Ignore the entire data directory
 tests/
+nltk_data/
 
 # Virtual environments
 .venv/  # Ignore the virtual environment directory
@@ -31,7 +32,6 @@ venv/
 *.sublime-workspace  # Ignore Sublime Text workspace files
 
 # Operating System specific files
-.DS_Store  # Ignore macOS Finder files
 Thumbs.db  # Ignore Windows thumbnail cache files
 
 # Temporary files

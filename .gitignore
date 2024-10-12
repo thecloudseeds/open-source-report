@@ -18,6 +18,7 @@ __pypackages__/
 
 # Data files
 data/  # Ignore the entire data directory
+tests/
 
 # Virtual environments
 .venv/  # Ignore the virtual environment directory
@@ -38,5 +39,6 @@ Thumbs.db  # Ignore Windows thumbnail cache files
 *.bak  # Ignore backup files
 *.zip
 
-# Miscellaneous
-*.syc  # Ignore specific file types
+# Ignore specific file types
+*.syc  
+draft.ipynb

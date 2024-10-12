@@ -14,14 +14,16 @@ from tqdm import tqdm
 from typing import Optional, List, Dict
 from src.github_api import GitHubAPI
 
+
 class GitHubDataCollector(GitHubAPI):
     """Class for scraping contributors and their repositories from GitHub."""
+
     def __init__(self):
         super().__init__()
 
     def scrap_egy_users(
-        self, params: Dict, endpoint: str, date: str,
-        output_filename: str = None ) -> List[Dict]:
+            self, params: Dict, endpoint: str, date: str,
+            output_filename: str = None) -> List[Dict]:
         """
         Scrape Egyptian users.
 
@@ -34,13 +36,21 @@ class GitHubDataCollector(GitHubAPI):
         Returns:
             A list of dictionaries containing the scraped user data.
         """
-        output_filename = output_filename or "egy_users.csv"
-        output_file_path = os.path.join(os.getcwd(), self.raw_dir, output_filename)
+        if not endpoint:
+            raise ValueError("Endpoint is a required parameter")
+
+        if not params:
+            raise ValueError("Params is a required parameter")
+
+        output_filename = output_filename or self.config["EGY_USERS_FILENAME"]
+        output_file_path = os.path.join(
+            os.getcwd(), self.raw_dir, output_filename)
 
         if not os.path.exists(output_file_path):
             open(output_file_path, 'w').close()
-            self.logger.info("File created at %s to store all Egyption users urls",
-                             output_file_path)
+            self.logger.info(
+                "File created at %s to store all Egyption users urls", output_file_path
+            )
 
         # Initialize an empty list to store scraped user data
         scrapped_users = []
@@ -67,12 +77,13 @@ class GitHubDataCollector(GitHubAPI):
         page = 1
 
         while True:
-            pbar.set_description(f"Scraping {total_count:03} users [{date}] Page {page:02}/{max_page:02}")
+            pbar.set_description(
+                f"Scraping {total_count:03} users [{date}] Page {page:02}/{max_page:02}")
             # Iterate over the users on the current page
             for item in response.get("items", []):
                 if item is None:
                     raise ValueError("Response contains a null user")
-                
+
                 user_data = {
                     "login": item.get("login"),
                     "url": item.get("url"),
@@ -82,7 +93,7 @@ class GitHubDataCollector(GitHubAPI):
                 scrapped_users.append(user_data)
 
             self.logger.info("Finished scraping page %s", page)
-            pbar.update(1) 
+            pbar.update(1)
 
             # Break the loop if all pages are processed
             page += 1
@@ -97,7 +108,7 @@ class GitHubDataCollector(GitHubAPI):
 
         # Write the scraped data to the output file
         with open(output_file_path, "a", newline="", encoding="utf-8") as file:
-            writer = csv.DictWriter(file, fieldnames=self.users_cols)
+            writer = csv.DictWriter(file, fieldnames=self.config["USER_COLS"])
             # Write the header only once at the beginning of the file
             if file.tell() == 0:  # Check if the file is empty
                 writer.writeheader()
@@ -107,8 +118,8 @@ class GitHubDataCollector(GitHubAPI):
         return scrapped_users
 
     def scrap_egy_repos(
-        self, input_file_path: str, users_limit: int = 50_000, 
-        skip_rows: int = 0, output_file_path: str = None) -> List[Dict]:
+            self, input_file_path: str, users_limit: int = 50_000,
+            skip_rows: int = 0, output_file_path: str = None) -> List[Dict]:
         """
         Scrape repositories from Egyptian users.
 
@@ -117,26 +128,27 @@ class GitHubDataCollector(GitHubAPI):
             input_filename (str): The file path of the input csv file containing the users.
             output_filename (str): The file path of the output csv file containing the scraped repositories.
             skip_rows (int): The number of rows to skip at the beginning of the input file.
-            mins_limit (float): The time limit for scraping each user in minutes.
 
         Returns:
             List[str]: A list of usernames of the users whose repositories were scraped.
         """
         if output_file_path is None:
-            output_file_path = os.path.join(os.getcwd(), 
-                               self.raw_dir, "egy_users_repos.csv")
+            output_file_path = os.path.join(
+                os.getcwd(), self.raw_dir, self.config["EGY_USERS_REPOS_FILENAME"])
 
         if not os.path.exists(output_file_path):
+
             open(output_file_path, 'w').close()
-            self.logger.info("File created at %s to store all Egyption repositories", 
-                             output_file_path)
+            self.logger.info(
+                "File created at %s to store all Egyption repositories", output_file_path
+            )
 
         till_rows = skip_rows + users_limit
         users_data = pd.read_csv(input_file_path, nrows=till_rows)
         users_data = users_data[skip_rows: till_rows]
 
-        with open(output_file_path, "a", newline="", encoding="utf-8") as file:
-            writer = csv.DictWriter(file, fieldnames=self.repos_cols)
+        with open(output_file_path, "a", newline="", encoding=self.config["DEFAULT_ENCODING"]) as file:
+            writer = csv.DictWriter(file, fieldnames=self.config["REPO_COLS"])
             # Write the header only once at the beginning of the file
             if file.tell() == 0:  # Check if the file is empty
                 writer.writeheader()
@@ -160,15 +172,14 @@ class GitHubDataCollector(GitHubAPI):
 
     def scrap_non_egy_repos(
         self, endpoint: str = "https://api.github.com/search/repositories",
-        params: Dict = lambda: {
+        params=lambda: {
             "q": "stars:>1000 sort:stars",
             "order": "desc",
             "per_page": 100,
-            "page": 1,
+            "page": 1
         },
-        total_count: int = 1000, output_file_path: str = None) -> None:
+            total_count: int = 1000, output_file_path: str) -> None:
         """Scrape the top GitHub repositories, excluding those in Egypt.
-
         This method makes a GET request to the GitHub API to search for
         repositories with more than 1000 stars, sorted in descending order.
         It then writes the repository details to a CSV file.
@@ -179,13 +190,21 @@ class GitHubDataCollector(GitHubAPI):
             output_path (str): The path to the CSV file to write to.
             total_count (int): The total number of repositories to scrape.
         """
-        if output_file_path is None:
-            output_file_path = os.path.join(os.getcwd(), self.draft_dir, "non_egy_repos.csv")
 
-        with open(output_file_path, "w", newline="", encoding="utf-8") as file:
-            self.logger.info("File created at %s to store non-egyption repositories", 
-                            output_file_path)
-            writer = csv.DictWriter(file, fieldnames=self.repos_cols)
+        if output_file_path is None:
+            output_file_path = os.path.join(
+                os.getcwd(), self.draft_dir, self.config["NON_EGY_REPOS_FILENAME"])
+
+        if not os.path.exists(output_file_path):
+            open(output_file_path, 'w').close()
+            self.logger.info(
+                "File created at %s to store non-egyption repositories", output_file_path
+            )
+
+        with open(output_file_path, "a", newline="", encoding="utf-8") as file:
+            self.logger.info("File created at %s to store non-egyption repositories",
+                             output_file_path)
+            writer = csv.DictWriter(file, fieldnames=self.config["REPO_COLS"])
             writer.writeheader()
 
             pbar = tqdm(total=total_count, colour='cyan',
@@ -197,8 +216,8 @@ class GitHubDataCollector(GitHubAPI):
                 response = self._get(url=endpoint, params=params)
 
                 if response is not None:
-                    self.logger.info("Total repositories Found: %s", 
-                                    response.get('total_count', 0))
+                    self.logger.info("Total repositories Found: %s",
+                                     response.get('total_count', 0))
 
                     repos = []
                     for repo in response['items']:
@@ -211,16 +230,15 @@ class GitHubDataCollector(GitHubAPI):
 
                     writer.writerows(repos)
                     pbar.update(len(repos))
-                    pbar.set_description("Scrapping Non Egyption Repos: "\
-                                        f"Page[{params['page']:01}/{int(total_count/100)}]")
+                    pbar.set_description("Scrapping Non Egyption Repos: "
+                                         f"Page[{params['page']:01}/{int(total_count/100)}]")
                     self.logger.info(f"Scraping page number {params['page']}")
 
                     params["page"] += 1
 
-
     def extract_egy_contribs(
-        self, input_file_path: str, skip_rows: int = 0,
-        output_file_path: str = None) -> None:
+            self, input_file_path: str, skip_rows: int = 0,
+            output_file_path: str = None) -> None:
         """
         Filter repositories to find Egyptian contributors.
 
@@ -229,20 +247,25 @@ class GitHubDataCollector(GitHubAPI):
         If so, it appends the contributor to a new row and writes it to the output file.
         """
         if output_file_path is None:
-            output_file_path = os.path.join(os.getcwd(), self.raw_dir, "egy_contribs.csv")
+            output_file_path = os.path.join(
+                os.getcwd(), self.raw_dir, self.config["EGY_CONTRIBS_FILENAME"]
+            )
 
         if not os.path.exists(output_file_path):
             open(output_file_path, 'w').close()
-            self.logger.info(f"File created at {output_file_path} for store all Egyption repositories")
+            self.logger.info(
+                f"File created at {output_file_path} for store all Egyption repositories")
 
         try:
             repos_df = pd.read_csv(input_file_path)
             repos_df = repos_df.dropna(subset=['owner', 'repo_name'])
-            repos_df = repos_df.drop_duplicates(subset=['owner', 'repo_name'], keep='first')
+            repos_df = repos_df.drop_duplicates(
+                subset=['owner', 'repo_name'], keep='first')
             repos_df = repos_df.loc[skip_rows:, ['owner', 'repo_name']]
 
             # Get the contributors for each repository
-            fieldnames=["repo_owner", "repo_name"] + self.profile_keys
+            fieldnames = ["repo_owner", "repo_name"] + \
+                self.config["PROFILE_KEYS"]
             with open(output_file_path, 'a', newline='', encoding='utf-8') as file:
                 writer = csv.DictWriter(file, fieldnames=fieldnames)
                 # Write the header only once at the beginning of the file
@@ -253,26 +276,31 @@ class GitHubDataCollector(GitHubAPI):
                             desc=f"Checking n Contributors for repo n", unit="repo")
 
                 for index, repo in repos_df.iterrows():
-                    repo_name = repo['repo_name']
-                    repo_owner = repo['owner']
+                    repo_name = repo.get('repo_name')
+                    repo_owner = repo.get('owner')
                     if repo_name is None or repo_owner is None:
-                        self.logger.warning("Skipping row %s due to missing"\
+                        self.logger.warning("Skipping row %s due to missing"
                                             "repo_name or repo_owner", index)
                         continue
 
-                    contribs_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contributors"
+                    contribs_url = f"{self.config['API_BASE_URL']}/repos/{repo_owner}/{repo_name}/contributors"
                     contribs = self._get(contribs_url)
+
                     if contribs is None:
-                        self.logger.warning("Skipping row %s due to missing contributors", index)
+                        self.logger.warning(
+                            "Skipping row %s due to missing contributors", index)
                         pbar.update(1)
                         continue
 
                     # Update the progress bar with the number of contributors
-                    pbar.set_description(f"Checking {len(contribs)} Contributors for repo [{index+1}/{len(repos_df)+(skip_rows or 0)}]")
+                    pbar.set_description(
+                        f"Checking {len(contribs)} Contributors for repo [{index+1}/{len(repos_df)+(skip_rows or 0)}]")
 
                     # Iterate over the contributors
                     for contrib in contribs:
-                        egy_contrib = self.get_profile(username=contrib['login'], location='egypt')
+                        egy_contrib = self.get_profile(
+                            username=contrib.get('login'), location='egypt')
+
                         if egy_contrib is not None:
                             egy_contrib["repo_owner"] = repo_owner
                             egy_contrib["repo_name"] = repo_name
@@ -285,31 +313,6 @@ class GitHubDataCollector(GitHubAPI):
         except pd.errors.EmptyDataError:
             self.logger.error("Skiprows exceeded file size")
 
-
-if __name__ == '__main__':
-    """
-    This block serves as the entry point for the script.
-    The script performs the following tasks:
-        - Scrape Egyptian users.
-        - Scrape repositories from those users.
-        - Scrape top global repositories (excluding Egypt).
-        - Extract Egyptian contributors from the top repositories.
-    """
-    collector = GitHubDataCollector()
-
-    # Scrape Egypt users
-    params = {"q": "location:egypt repos:>0 created:2013-10", "per_page": 100}
-    collector.scrap_egy_users(params=params, date='2023-10')
-
-    # Scrape Egyption Repositories
-    collector.scrap_egy_repos("./data/raw/egy_users.csv",
-                              './data/egy_users_repos.csv',
-                               skip_rows=0)
-
-    # scrape top global repositories (excluding Egypt)
-    collector.scrap_non_egy_repos("./data/draft/non_egy_repos.csv",
-                                  total_count=1000)
-
-    # Example to extract Egyptian contributors from top repositories
-    collector.extract_egy_contribs( "./data/draft/non_egy_repos.csv",
-                                    "./data/raw/top_egy_contribs.csv")
+        except Exception as e:
+            self.logger.error("Error while extracting contributors: %s", e)
+            raise

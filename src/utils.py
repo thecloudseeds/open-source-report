@@ -1,34 +1,74 @@
 
 import re
 import json
-import matplotlib.pyplot as plt
+import pandas as pd
 import seaborn as sns
+import matplotlib.pyplot as plt
 from typing import Dict, List, Optional, Any
 
 
-def bar_plot(df, feature, figsize=(12, 5), rotation=90):
+def bar_plot(
+        df: pd.DataFrame, feature: str,
+        figsize: tuple = (12, 5),
+        rotation: int = 90,
+        fontsize: int = 14,
+        y: str = 'count') -> None:
+    """
+    Plots a bar chart of the counts of repositories per feature. This is useful for visualizing the
+    distribution of repository counts for any given feature (e.g. programming language, country, etc.).
 
+    Args:
+        - df (pd.DataFrame): DataFrame containing the feature and count columns.
+        - feature (str): Name of the feature to plot.
+        - rotation (int): Rotation angle for the x-axis labels.
+        - fontsize (int): Font size for the title and labels.
+    """
+
+    if df is None:
+        raise ValueError("Input DataFrame is null")
+
+    if feature not in df.columns:
+        raise KeyError(f"Column '{feature}' not found in DataFrame")
+
+    # Create a color palette for the bar chart
     palette_color = sns.color_palette('RdBu', len(df))
+
+    # Create the figure and set its size
     plt.figure(figsize=figsize)
 
-    bar_plot = sns.barplot(x=feature, y='count',
+    # Create the bar plot
+    bar_plot = sns.barplot(x=feature, y=y,
                            data=df, palette=palette_color)
 
-    plt.xticks(rotation=rotation, fontsize=12)
-    plt.title('Counts of Repositories per Area', fontsize=16)
-    plt.xlabel('City/Area', fontsize=14)
-    plt.ylabel('Number of Repos', fontsize=14)
+    # Set the x-axis labels and title
+    plt.xticks(rotation=rotation, fontsize=fontsize-2)
 
-    # Total count for percentage calculation
+    plt.title(
+        f'Counts of Repositories per {feature}'.title(),
+        fontsize=fontsize + 2, y=1.1
+    )
+
+    plt.xlabel(feature.title(), fontsize=fontsize, labelpad=12)
+    plt.ylabel('Number of Repos', fontsize=fontsize, labelpad=12)
+
+    # Get the total count of repositories
     total_count = df['count'].sum()
 
-    # Add percentage labels on top of the bars
-    for p in bar_plot.patches:
-        percentage = f'{(p.get_height() / total_count) * 100:.1f}%'
-        bar_plot.annotate(percentage,
-                          (p.get_x() + p.get_width() / 2., p.get_height()),
-                          ha='center', va='bottom', fontsize=10)
+    # Add percentage labels to each bar
+    for patch in bar_plot.patches:
+        # If the patch has a height and total count is non-zero, calculate the percentage
+        if patch.get_height() is not None and total_count != 0:
+            percentage = f'{(patch.get_height() / total_count) * 100:.1f}%'
+            # Add the percentage label to the bar
+            bar_plot.annotate(
+                percentage,
+                (patch.get_x() + patch.get_width() / 2., patch.get_height()),
+                ha='center', va='bottom', fontsize=fontsize-4,
+                bbox=dict(facecolor='white', alpha=0.5,
+                          boxstyle='round,pad=0.4')
+            )
 
+    # Make sure the plot looks nice and isn't too squished
     plt.tight_layout()
     plt.show()
 

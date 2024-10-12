@@ -1,0 +1,201 @@
+# Configuration file for the GitHub repository scraper
+
+# Base URL of the GitHub API
+API_BASE_URL: https://api.github.com
+
+# List of needed user details to be retrieved from the GitHub API when scraping users
+USERS_COLS:
+  - login  # GitHub username
+  - url    # URL of the user's GitHub profile
+
+# List of needed repository details
+REPO_COLS:
+  - owner                   # Repository owner
+  - repo_name               # Repository name
+  - repo_html_url           # URL of the repository
+  - language                # Programming language of the repository
+  - topics                  # Topics of the repository
+  - repo_description        # Description of the repository
+  - open_issues_count       # Number of open issues
+  - forks_count             # Number of forks
+  - stargazers_count        # Number of stargazers
+  - last_repo_commit_date   # Date of the last commit
+  - license                 # License of the repository
+
+REPOS_DETAILS:
+  - owner
+  - repo_name
+  - filenames
+  - tags
+  - dependencies
+  - issues
+  - pull_requests
+  - commits_count
+  - ci_cd_tool
+
+# List of needed profile details
+PROFILE_KEYS:
+  - login         # GitHub username
+  - name          # User name
+  - location      # User location
+  - email         # User email
+  - bio           # User bio
+  - public_repos  # Number of public repositories
+  - public_gists  # Number of public gists
+  - followers     # Number of followers
+  - following     # Number of users followed
+  - created_at    # Date of account creation
+  - updated_at    # Date of last update
+
+# Define language keywords related to databases
+DB_LANGUAGES:
+  - SQL
+  - TSQL
+  - PLSQL
+  - PL/pgSQL
+  - MongoDB
+  - Cypher
+  - CQL
+  - NoSQL
+  - DynamoDB
+  - Neo4j
+
+# List of database to retrieve from the GitHub API when scraping repositories
+DB_FILES:
+  - requirements.txt
+  - requirement.txt
+  - schema.sql
+  - pom.xml
+  - Pipfile
+  - database.yml
+  - .env
+  - .env.example
+  - database.config
+  - config.yml
+  - pyproject.toml
+  - package.json
+  - docker-compose.yml
+  - Gemfile
+  - go.mod
+  - build.gradle
+  - settings.py
+  - init.sql
+  - db.js
+  - database.js
+  - db_config.php
+  - database.ini
+  - db.properties
+  - hibernate.cfg.xml
+  - connection.js
+  - knexfile.js
+  - application.properties
+  - alembic.ini
+  - flyway.conf
+  - v1__init.sql
+  - pg_hba.conf
+  - postgresql.conf
+  - my.ini
+  - my.cnf
+  - postgresql.conf
+  - .gitignore
+
+# List of documentation to retrieve from the GitHub API when scraping repositories
+DOC_FILES:
+  - doc
+  - docs
+  - documentation
+  - documentations
+  - readme
+  - readme.md
+  - contributing.md
+  - code_of_conduct.md
+  - changelog.md
+  - install.md
+  - license
+  - api.md
+  - security.md
+  - support.md
+  - governance.md
+  - faq.md
+  - styleguide.md
+  - todo.md
+  - authors
+  - credits.md
+  - dco.md
+  - changelog
+  - pull_request_template.md
+
+# When retraive reoi fileneames
+# Ignore directories containing static assets, build artifacts and third-party code
+UN_IMPORTANT_DIR:
+  - images
+  - imgs
+  - img
+  - figures
+  - figure
+  - figs
+  - assets
+  - asset
+  - __pycache__
+  - log
+  - logs
+  - .git
+  - 3rdparty
+  - bin
+  - buildfiles
+  - darwin
+# List of CI/CD files to retrieve from the GitHub API when scraping repositories
+CI_CD:
+  .github/workflows/: GitHub Actions
+  circle.yml: CircleCI
+  travis.yml: Travis CI
+  jenkinsfile: Jenkins
+  gitlab-ci.yml: GitLab CI
+  azure-pipelines.yml: Azure Pipelines
+
+# Error messages for common error codes
+ERROR_MESSAGES:
+  404: "[404]: Resource not found - This means a repository was deleted or does not exist."
+  451: "[451]: Unavailable For Legal Reasons - This means the repository contains illegal content."
+  401: "[401]: Unauthorized user - Check GitHub token. This means the token is invalid or has been revoked."
+  204: "[204]: No Content - This means a resource exists but there is no content to return."
+  409: "[409]: Conflict - This means a resource exists but should not or already has an operation running on it."
+  422: "[422]: Unprocessable Entity - This means a resource exists but it does not meet the requirements for the request."
+  429: "[429]: Too Many Requests - This means the request was rate limited. The limit is 5000 requests per hour."
+  500: "[500]: Internal Server Error - This means the server encountered an unexpected condition that prevented it from fulfilling the request."
+  502: "[502]: Bad Gateway - This means the server received an invalid response from the upstream server."
+  503: "[503]: Service Unavailable - This means the server is currently unable to handle the request due to a temporary overloading or maintenance of the server."
+
+# API documentation keywords
+API_DOC_KEYWORDS:
+  - swagger
+  - openapi
+  - postman
+  - api docs
+  - rest api
+  - documentation
+  - endpoints
+  - swagger.json
+  - openapi.json
+  - postman_collection.json
+  - api-docs
+  - api-spec
+
+# HTTP Session configuration
+RETRY_FACTOR: 0.2
+RETRAY_NUM: 5
+
+# Set default encoding for reading and writing files
+DEFAULT_ENCODING: utf-8
+
+# Directories to create and be used
+DATA_DIR: data  # Directory for storing scraped data
+LOG_DIR: logs  # Directory for storing log files
+
+# File paths for the output of the user and repository scrapers
+EGY_USERS_FILENAME:  egy_users.csv                # File path for user data
+EGY_USERS_REPOS_FILENAME: egy_users_repos.csv     # File path for repository data of Egyptian users
+NON_EGY_REPOS_FILENAME: non_egy_repos.csv         # File path for repository data of non-Egyptian users
+EGY_CONTRIBS_FILENAME: egy_contribs.csv           # File path for contributor data
+DB_KEYWORDS_FILENAME: database_keywords.json      # File path for database_keywords.json
+

@@ -41,4 +41,4 @@ Thumbs.db  # Ignore Windows thumbnail cache files
 
 # Ignore specific file types
 *.syc  
-draft.ipynb
+draft*.ipynb

@@ -60,6 +60,7 @@ DB_LANGUAGES:
   - DynamoDB
   - Neo4j
 
+
 # List of database to retrieve from the GitHub API when scraping repositories
 DB_FILES:
   - requirements.txt
@@ -125,9 +126,9 @@ DOC_FILES:
   - changelog
   - pull_request_template.md
 
-# When retraive reoi fileneames
 # Ignore directories containing static assets, build artifacts and third-party code
-UN_IMPORTANT_DIR:
+UN_IMPORTANT_DIRS:
+  # Assests and Cache Directories
   - images
   - imgs
   - img
@@ -136,37 +137,140 @@ UN_IMPORTANT_DIR:
   - figs
   - assets
   - asset
-  - __pycache__
+  - storage
+  - cache
+  - caches
+  - contents
+  - content
+  # Temporary Directories
+  - tmp
+  - temp
+  - draft
+  - drafts
+  # Project outputs
+  - output
+  - outputs
+  - out
+  - outs
+  # Log Directories
   - log
   - logs
+  - error_logs
+  - session
+  - sessions
+  # Python and Build Artifacts
+  - __pycache__
+  - bin
+  - build
+  - builds
+  - buildfiles
+  - dist
+  - dists
+  - distfiles
+  - distdir
+  # Dependency and Third-Party Directories
   - .git
   - 3rdparty
-  - bin
-  - buildfiles
+  - vendor
+  - vendors
   - darwin
+  - lib
+  - node
+  - node_modules
+  # Testing Directories
+  - testing
+  - tests
+  - test
+  - test-results
+  - test-result
+  - testresults
+  - testresult
+  - test-suite
+  - test-suites
+  - testsuite
+  - testsuites
+
 # List of CI/CD files to retrieve from the GitHub API when scraping repositories
 CI_CD:
   .github/workflows/: GitHub Actions
-  circle.yml: CircleCI
-  travis.yml: Travis CI
-  jenkinsfile: Jenkins
+  bitbucket-pipelines.yml: Bitbucket
+
   gitlab-ci.yml: GitLab CI
-  azure-pipelines.yml: Azure Pipelines
+  .gitlab-ci.yml: GitLab CI  
+  .gitlab-ci.yaml: GitLab CI  
+  gitlab-ci/: GitLab CI
 
-# Error messages for common error codes
-ERROR_MESSAGES:
-  404: "[404]: Resource not found - This means a repository was deleted or does not exist."
-  451: "[451]: Unavailable For Legal Reasons - This means the repository contains illegal content."
-  401: "[401]: Unauthorized user - Check GitHub token. This means the token is invalid or has been revoked."
-  204: "[204]: No Content - This means a resource exists but there is no content to return."
-  409: "[409]: Conflict - This means a resource exists but should not or already has an operation running on it."
-  422: "[422]: Unprocessable Entity - This means a resource exists but it does not meet the requirements for the request."
-  429: "[429]: Too Many Requests - This means the request was rate limited. The limit is 5000 requests per hour."
-  500: "[500]: Internal Server Error - This means the server encountered an unexpected condition that prevented it from fulfilling the request."
-  502: "[502]: Bad Gateway - This means the server received an invalid response from the upstream server."
-  503: "[503]: Service Unavailable - This means the server is currently unable to handle the request due to a temporary overloading or maintenance of the server."
+  circleci.yml: CircleCI
+  circle.yml: CircleCI
+  .circleci/config.yml: CircleCI  
+  .circleci/config.yaml: CircleCI  
+  .circleci/: CircleCI  
 
-# API documentation keywords
+  jenkins.yml: Jenkins  
+  jenkins.yaml: Jenkins  
+  jenkinsfile: Jenkins  
+  jenkinsfile.groovy: Jenkins  
+  jenkins/: Jenkins 
+
+  ansible.cfg: Ansible
+  playbooks/: Ansible
+
+  travis.yml: Travis CI  
+  .travis.yml: Travis CI  
+  .travis.yaml: Travis CI  
+
+  azure-pipelines.yml: Azure
+  cloudbuild.yaml: GCB 
+  cloudbuild.yml: GCB
+  buildspec.yml: AWS
+  template.yaml: AWS
+  cdk/: AWS 
+
+  dvc.yaml: DVC  
+  dvc.lock: DVC  
+  metrics.yaml: DVC  
+  .dvc/config: DVC  
+  model_registry/: MLFlow  
+  mlruns/: MLFlow  
+  mlflow.yml: MLFlow  
+  mlflow.yaml: MLFlow  
+    
+  appveyor.yml: AppVeyor
+  bamboo-specs/: Bamboo 
+  .teamcity/: TeamCity 
+  codeship.yml: Codeship  
+  codeship.yaml: Codeship  
+  codeclimate.yml: CodeClimate  
+  argo-cd/: Argo CD
+  application.yaml: Argo CD
+  openshift-pipelines/: OpenShift
+  master.cfg: Buildbot
+  go.cd/: GoCD
+  cruise-config.xml: GoCD
+  semaphore.yml: Semaphore
+  semaphore.yaml: Semaphore
+  spinnaker.yml: Spinnaker
+  spinnaker/: Spinnaker
+  harness.yaml: Harness
+  deploybot.yaml: DeployBot
+  katalon.yaml: Katalon
+  webapp.yaml: WebApp
+  cfengine/: CFEngine
+  rudder/: Rudder
+  rundeck/: RunDeck
+  juju/: Juju
+  pom.xml: Maven
+  Dockerfile: Docker
+  docker-compose.yml: Docker
+  build.xml: Apache ANT
+  gruntfile.js: Grunt
+  packer.json: Packer
+  codemagic.yaml: Codemagic
+  buddy.yml: Buddy
+  deployhq.yml: DeployHQ
+
+
+# List of API documentation files to retrieve from the GitHub API when scraping repositories
 API_DOC_KEYWORDS:
   - swagger
   - openapi
@@ -183,7 +287,7 @@ API_DOC_KEYWORDS:
 
 # HTTP Session configuration
 RETRY_FACTOR: 0.2
-RETRAY_NUM: 5
+RETRY_NUM: 5
 
 # Set default encoding for reading and writing files
 DEFAULT_ENCODING: utf-8

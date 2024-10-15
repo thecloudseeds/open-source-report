@@ -9,6 +9,7 @@ __pycache__/
 __pypackages__/
 
 # Log files
+.gd/
 logs/
 *.log  # Ignore log files
 *.log.*  # Ignore rotated log files
@@ -41,3 +42,4 @@ Thumbs.db  # Ignore Windows thumbnail cache files
 # Ignore specific file types
 *.syc  
 draft*.ipynb
+/data

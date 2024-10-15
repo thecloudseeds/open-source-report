@@ -1,0 +1,8 @@
+[core]
+    autostage = true
+    remote = codequest
+
+[remote "codequest"]
+    url = gdrive://1YjaYodKkHd8L6gnLl1cdnIlnOcbTckCH
+    gdrive_use_service_account = true
+    gdrive_acknowledge_abuse = true

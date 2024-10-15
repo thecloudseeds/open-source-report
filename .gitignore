@@ -1,7 +1,6 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]  # Ignore Python bytecode files
-*.so       # Ignore shared object files
 
 # Jupyter Notebook
 .ipynb_checkpoints/  # Ignore Jupyter notebook checkpoints
@@ -10,6 +9,7 @@ __pycache__/
 __pypackages__/
 
 # Log files
+logs/
 *.log  # Ignore log files
 *.log.*  # Ignore rotated log files
 
@@ -29,7 +29,6 @@ venv/
 # IDE specific files
 .vscode/  # Ignore VSCode settings
 .idea/    # Ignore JetBrains IDE settings
-*.sublime-workspace  # Ignore Sublime Text workspace files
 
 # Operating System specific files
 Thumbs.db  # Ignore Windows thumbnail cache files

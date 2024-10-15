@@ -43,3 +43,4 @@ Thumbs.db                 # Ignore Windows thumbnail cache files
 # Ignore specific file types
 *.syc                     # Ignore specific file type
 /data                     # Ignore specific directory
+/data

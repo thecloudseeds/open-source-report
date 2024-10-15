@@ -1,30 +1,14 @@
-"""
-This module assesses the documentation quality of GitHub repositories.
-It analyzes various repository aspects such as:
-
-    - Existence of basic documentation files like `README.md`.
-    - Presence of a "docs" folder indicating dedicated documentation.
-    - Contents of README files, searching for "contributing," "description,"
-      and instructions on "installation," "running," or "starting" the project.
-    - Existence of setup files (`setup.py`, `requirements.txt`, etc.).
-    - Links or files related to API documentation.
-    - Existence of documentation-related topics/tags
-
-The score for documentation quality is determined based on the presence and contents
-of these elements.
-"""
+import re
+import csv
 import ast
-from typing import Optional, Dict
+import json
+import base64
+import binascii
+
+from typing import Dict, List
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
-
 from src.github_api import GitHubAPI
-
-API_DOC_KEYWORDS = [
-    'swagger', 'openapi', 'postman', 'api docs', 'rest api', 'documentation',
-    'endpoints', 'swagger.json', 'openapi.json', 'postman_collection.json',
-    'api-docs', 'api-spec',
-]
 
 
 class GitHubDocAssessor(GitHubAPI):
@@ -32,182 +16,173 @@ class GitHubDocAssessor(GitHubAPI):
     Assesses the documentation quality of a GitHub repository based on various factors.
     """
 
-    def __init__(self, row: Dict):
+    def __init__(self):
+        super().__init__()
+
+        self.row = None
+        self.base_url = ""
+        # Cache for filenames and readme content. So that we don't have to fetch the filenames multiple times.
+        self.doc_files, self.api_files = set(), set()
+
+        # The API documentation keywords are the words that are used to search for API documentation.
+        # We use a regular expression to search for these words in the repository's description and topics.
+        api_doc_keywords = r"\b(?:swagger|openapi|postman|api\s*docs|rest\s*api|documentation|endpoints|swagger\.json|openapi\.json|postman_collection\.json|api-[Dd]ocs|api-spec)\b"
+        self.api_doc_keywords = re.compile(api_doc_keywords)
+
+    def get_readme_content(self) -> str:
         """
-        Initializes the DocumentationAssessor with a row from the repository DataFrame.
-
-        Args:
-            row (Dict): A row representing a repository from the DataFrame.
-            token (Optional[str], optional): GitHub token for API authentication. Defaults to None.
-        """
-
-        super().__init__()  # Call the GitHubAPI class constructor for logger setup
-
-        self.row = row
-        repo_owner = self.row['repo_html_url'].split("/")[-2]
-        repo_name = self.row['repo_html_url'].split("/")[-1]
-        self.base_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}"
-
-    def check_readme_guidelines(self, filename: str) -> int:
-        """
-        Checks a README file for CONTRIBUTING guidelines, how-to-run instructions, and a description.
-
-        Returns: A score representing the number of guidelines found in the README:
-            - 1 points: for each of[ CONTRIBUTING, how-to-run instructions, and a description] are found.
-            - 1 point : for every guideline found.
-            - 0 points: If none of the guidelines are found.
-        """
-
-        readme_url = urljoin(self.base_url, f'/blob/master/{filename}')
-        readme_data = self._get(readme_url)
-        contribution = 0
-        how_to_run = 0
-        description = 0
-
-        if readme_data:
-            soup = BeautifulSoup(readme_data.content, 'html.parser')
-            headings = soup.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
-
-            for heading in headings:
-                if 'contribut' in heading.text.lower():
-                    contribution = 1
-                if 'description' in heading.text.lower():
-                    description = 1
-                if any(word in heading.text.lower()
-                       for word in ['install', 'run', 'start', 'venv']):
-                    how_to_run = 1
-
-        return contribution + how_to_run + description
-
-    def check_api_documentation(self) -> int:
-        """
-        Checks for the presence of API documentation within a repository.
+        This method is used to fetch the content of the README file in the repository.
+        It handles cases where the README filename is stored incorrectly in the file (e.g., readme.md instead of README.md).
 
         Returns:
-            - 3 points: If API documentation links or files are found.
-            - 0 points: If no API documentation is found.
+        --------
+            The content of the README file.
         """
-        api_docs_found = 0
+        # Search for README file, considering potential case mismatch
+        readme_files = [f for f in self.doc_files if 'readme' in f.lower()]
 
-        api_response = self._get(self.base_url)
-        if "content" not in api_response or api_response["content"] is None:
-            self.logger.warning("Missing content in the repository response.")
-            return 0  # Return 0 score since API content is not found
-        else:
-            soup = BeautifulSoup(api_response['content'], 'html.parser')
+        # If no README file is found, we set the content to an empty string.
+        if not readme_files:
+            self.logger.info(f"No README file found for this repo")
+            return ""
 
-            # Check for API documentation links in README and other files
-            links = soup.find_all('a', href=True)
-            for link in links:
-                href = link['href']
-                if any(keyword in href.lower()
-                       for keyword in API_DOC_KEYWORDS):
-                    api_docs_found = 3
-                    break
+        # Add common README variants
+        readme_files.extend(["README.md", "README"])
+        readme_content = ""
+        # Iterate over the README files and fetch their content
+        for readme_file in readme_files:
+            # Construct the URL of the README file
+            readme_url = f"{self.base_url}/contents/{readme_file}"
+            self.logger.debug(f"Fetching README file from: {readme_url}")
+            response = self._get(readme_url)
 
-        # Check for API documentation files directly within the repository
-        if api_docs_found == 0:
-            for file in soup.find_all('a', {'class': 'js-navigation-open'}):
-                filename = file.text.strip()
-                if any(keyword in filename.lower()
-                       for keyword in API_DOC_KEYWORDS):
-                    api_docs_found = 3
-                    break
+            try:
+                # Get encoding from response
+                encoding = response["encoding"]
+                self.logger.info(f"Response encoding: {encoding}")
+                if encoding == "base64":
+                    # Decode the base64 encoded content
+                    readme_content += base64.b64decode(
+                        response["content"]).decode("utf-8")
+                elif encoding == "hex":
+                    # Decode the hex encoded content
+                    readme_content += bytes.fromhex(
+                        response["content"]).decode("utf-8")
+                else:
+                    # Decode the content using the specified encoding
+                    readme_content += response["content"].encode(
+                        encoding).decode("utf-8")
 
-        return api_docs_found
+            except (binascii.Error, UnicodeDecodeError, OSError) as e:
+                # Handle any errors that occur while decoding the README content
+                self.logger.warning(
+                    "Error while decoding README content: %s", e)
 
-    def assess_documentation(self) -> int:
+        return readme_content
+
+    def check_readme_guidelines(self, readme_content) -> int:
         """
-        Assesses the documentation quality based on the presence of specific files, content, and links.
+        Checks a README file for contributing guidelines, how-to-run instructions, and other common sections.
 
-        Returns: A score representing the overall documentation quality, where:
-            - Higher score = Better documentation
-            - Score is determined based on the presence of:
-                - README guidelines (CONTRIBUTING, how-to-run, description)
-                - Setup files (setup.py, requirements.txt, etc.)
-                - "docs" directory
-                - API documentation
+        Returns:
+        --------
+            A score representing the number of guidelines found in the README.
         """
-        contribution = 0
-        setup_file = 0
-        docs_dir = 0
-        repo_desc = 0
+        # A list of regular expressions representing the guidelines we want to check for.
+        # We use case-insensitive matching to make sure we catch variations in capitalization.
+        guidelines = [
+            # Check for contributing guidelines
+            r'(?:contributing|contributions|contribution)',
+            # Check for getting started or quickstart instructions
+            r'(?:run|start|install|use|get started|getting started|quickstart|installation)',
+            # Check for tutorials or example code
+            r'(?:tutorial|example|tutorials|examples|usage|use cases|applications|use case|application)'
+        ]
 
-        api_docs = self.check_api_documentation()
-        filenames = ast.literal_eval(
-            self.row["filenames"]) if isinstance(
-            self.row["filenames"],
-            str) else self.row["filenames"]
+        # Log the guidelines we're checking for
+        self.logger.debug(f"Checking guidelines: {guidelines}")
 
-        if len(filenames) == 0:
-            self.logger.info(
-                "Repository %s has no files - score: 0.",
-                self.base_url)
+        if readme_content == '':
             return 0
 
-        readme_files = [
-            f for f in filenames if f.lower().startswith('readme.')]
-        if readme_files:
-            readme_file = readme_files[0]
-            readme_score = self.check_readme_guidelines(readme_file)
-        else:
-            readme_score = 0
+        readme_score = 0
+        for guideline in guidelines:
+            if re.search(guideline, readme_content, re.IGNORECASE):
+                self.logger.info(f"Found guideline: {guideline}")
+                readme_score += 1
+            else:
+                self.logger.info(f"Did not find guideline: {guideline}")
 
-        if self.row['repo_description'] or self.row['topics']:
-            repo_desc = 0
-        else:
-            repo_desc = 1
+        self.logger.info(f"Readme score: {readme_score}")
 
-        # Check for intensive documentation
-        if 'doc' in self.row["filenames"]:
-            docs_dir = 3
+        return readme_score
 
-        if 'CONTRIBUTING.md' in self.row["filenames"]:
-            contribution = 2
+    # def check_api_documentation(self, readme_content) -> int:
+    #     """
+    #     Checks for the presence of API documentation links or files within a repository.
 
-        # Check for specific setup files
-        setup_files = [
-            'setup.py',
-            'requirements.txt',
-            'package.json',
-            'environment.yml',
-            'Pipfile',
-            'setup.cfg',
-            'config',
-            '.gitignore',
-            'LICENCE',
-            'SUPPORT.md',
-            'SECURITY.md',
-        ]
-        setup_file = sum(1 for file in setup_files if file in filenames)
+    #     Returns:
+    #     --------
+    #         - 3 points if API documentation links or files are found.
+    #         - 0 points if no API documentation is found.
+    #     """
+    #     # Check if the repository's description or topics contain API documentation keywords
+    #     if self.api_doc_keywords.search(self.row['repo_description']) or \
+    #             self.api_doc_keywords.search(self.row['topics']):
+    #         self.logger.info(
+    #             "Found API documentation keywords in description or topics.")
+    #         return 2
 
-        results = (
-            contribution
-            + readme_score
-            + setup_file
-            + docs_dir
-            + repo_desc
-            + api_docs
-        )
-        self.logger.info(
-            "Repository %s has score: %s.",
-            self.base_url,
-            results)
+    #     # Check if the repository's README file contains API documentation keywords
+    #     if self.api_doc_keywords.search(readme_content):
+    #         self.logger.info(
+    #             "Found API documentation keywords in the README file.")
+    #         return 2
 
-        return results
+    #     # Search for API documentation files in the repository's files
+    #     for api_pattern in self.config['API_FILES_PATTERNS']:
+    #         if self.api_files):
+    #             self.logger.info(
+    #                 "Found API documentation file matching pattern: %s", api_pattern)
+    #             return 3
+    #     # No API documentation found
+    #     self.logger.info("No API documentation found in the repository.")
+    #     return 0
 
+    def assess_repo_doc(self, row: Dict) -> int:
+        """
+        Assesses the documentation quality of a repository based on the presence
+        of specific files, content, and links.
+        Args:
+        -----
+            row (Dict): A dictionary containing the repository information.
+        Returns:
+        --------
+            A score representing the overall documentation quality.
+        """
+        self.row = row
+        # Fetch the base URL for the repository
+        self.base_url = f"{self.config['API_BASE_URL']}/repos/{self.row['owner']}/{self.row['repo_name']}"
+        # Fetch the list of documentation files and api_files in the repository
+        self.doc_files = set(ast.literal_eval(self.row['doc_files']))
+        self.api_files = set(ast.literal_eval(self.row['api_files']))
 
-# if __name__ == "__main__":
+        # Repo description, topic and tags score
+        basic_desc = self.row['repo_description'] + \
+            self.row['topics']+self.row['tags']
+        repo_desc = 1 if basic_desc else 0
 
-#     import pandas as pd
-#     from tqdm import tqdm
+        # Check for API documentation
+        api_scroe = 3 if self.api_files else 0
 
-#     df = pd.read_csv("./data/egypt_open_source_data.csv").sample(10)
+        # Readme content and guidelines assessment
+        readme_content = self.get_readme_content()
+        readme_score = self.check_readme_guidelines(readme_content)
 
-#     scores = []
-#     for index, row in tqdm(df.iterrows(), total=len(df),
-#                            desc="Documentation Scoring"):
-#         assessor = GitHubDocAssessor(row)
-#         df.loc[index, 'documentation_score'] = assessor.assess_documentation()
+        # Total score calculation
+        total_score = (repo_desc + readme_score + api_scroe)
 
-#     df.to_csv("./data/docs.csv", index=False)
+        self.logger.info("Repository %s has score: %s.",
+                         self.base_url, total_score)
+
+        return total_score

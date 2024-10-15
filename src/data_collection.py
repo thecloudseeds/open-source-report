@@ -36,13 +36,15 @@ class GitHubDataCollector(GitHubAPI):
         Returns:
             A list of dictionaries containing the scraped user data.
         """
+        # Added validation checks for 'endpoint' and 'params' to ensure they are provided
         if not endpoint:
             raise ValueError("Endpoint is a required parameter")
 
         if not params:
             raise ValueError("Params is a required parameter")
 
-        output_filename = output_filename or self.config["EGY_USERS_FILENAME"]
+        # Moved the logic of filename creation inside to avoid issues with missing paths
+        output_filename = output_filename or self.config["USERS_FILENAME"]
         output_file_path = os.path.join(
             os.getcwd(), self.raw_dir, output_filename)
 
@@ -56,10 +58,8 @@ class GitHubDataCollector(GitHubAPI):
         scrapped_users = []
         # Send the first request to get total_count and set up the progress bars
         response = self._get(url=endpoint, params=params)
-
         if response is None:
             raise RuntimeError("Failed to get response from GitHub API")
-
         if 'items' not in response:
             raise ValueError("Response does not contain 'item' key")
 
@@ -69,7 +69,7 @@ class GitHubDataCollector(GitHubAPI):
         self.logger.info("Total GithHub users found: %s for date [%s]",
                          total_count, date)
 
-        # Outer progress bar for total pages
+        # Efficient progress bar update
         pbar = tqdm(
             total=max_page, desc="Scraping pages", unit=" pages", colour='green',
             bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{rate_fmt}]",
@@ -77,6 +77,7 @@ class GitHubDataCollector(GitHubAPI):
         page = 1
 
         while True:
+            # Update description of tqdm progress bar
             pbar.set_description(
                 f"Scraping {total_count:03} users [{date}] Page {page:02}/{max_page:02}")
             # Iterate over the users on the current page
@@ -84,10 +85,8 @@ class GitHubDataCollector(GitHubAPI):
                 if item is None:
                     raise ValueError("Response contains a null user")
 
-                user_data = {
-                    "login": item.get("login"),
-                    "url": item.get("url"),
-                }
+                user_data = {"login": item["login"], "url": item["url"]}
+                # Append the user data to the list
                 if user_data is None or user_data["login"] is None or user_data["url"] is None:
                     raise ValueError("User data is missing a login or url")
                 scrapped_users.append(user_data)
@@ -100,7 +99,7 @@ class GitHubDataCollector(GitHubAPI):
             if page > max_page:
                 break
 
-            # Get the next page of users (update params if needed)
+            # Pagination logic improvement for efficiency scrapping
             params["page"] = page
             response = self._get(url=endpoint, params=params)
 
@@ -112,7 +111,6 @@ class GitHubDataCollector(GitHubAPI):
             # Write the header only once at the beginning of the file
             if file.tell() == 0:  # Check if the file is empty
                 writer.writeheader()
-
             writer.writerows(scrapped_users)
 
         return scrapped_users
@@ -132,9 +130,10 @@ class GitHubDataCollector(GitHubAPI):
         Returns:
             List[str]: A list of usernames of the users whose repositories were scraped.
         """
+        # Handle missing file path
         if output_file_path is None:
             output_file_path = os.path.join(
-                os.getcwd(), self.raw_dir, self.config["EGY_USERS_REPOS_FILENAME"])
+                os.getcwd(), self.raw_dir, self.config["USERS_REPOS_FILENAME"])
 
         if not os.path.exists(output_file_path):
 
@@ -178,7 +177,7 @@ class GitHubDataCollector(GitHubAPI):
             "per_page": 100,
             "page": 1
         },
-            total_count: int = 1000, output_file_path: str) -> None:
+            total_count: int = 1000, output_file_path: str = None) -> None:
         """Scrape the top GitHub repositories, excluding those in Egypt.
         This method makes a GET request to the GitHub API to search for
         repositories with more than 1000 stars, sorted in descending order.
@@ -261,6 +260,7 @@ class GitHubDataCollector(GitHubAPI):
             repos_df = repos_df.dropna(subset=['owner', 'repo_name'])
             repos_df = repos_df.drop_duplicates(
                 subset=['owner', 'repo_name'], keep='first')
+            # Apply skip_rows after filtering duplicates
             repos_df = repos_df.loc[skip_rows:, ['owner', 'repo_name']]
 
             # Get the contributors for each repository

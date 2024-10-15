@@ -60,230 +60,167 @@ DB_LANGUAGES:
   - DynamoDB
   - Neo4j
 
-
 # List of database to retrieve from the GitHub API when scraping repositories
-DB_FILES:
-  - requirements.txt
-  - requirement.txt
-  - schema.sql
-  - pom.xml
+DB_FILES_PATTERNS:
+  - req[a-z]?.txt
+  - schema\.sql
+  - pom\.xml
   - Pipfile
-  - database.yml
-  - .env
-  - .env.example
-  - database.config
-  - config.yml
-  - pyproject.toml
-  - package.json
-  - docker-compose.yml
+  - database\.(yml|yaml)?
+  - \.env
+  - \.env\.example
+  - database\.config
+  - config\.yml
+  - pyproject\.toml
+  - package\.json
+  - docker-compose\.(text.|prod.|dev.|local.)?(yml|yaml)?
   - Gemfile
-  - go.mod
-  - build.gradle
-  - settings.py
-  - init.sql
-  - db.js
-  - database.js
-  - db_config.php
+  - go\.mod
+  - build\.gradle
+  - settings\.py
+  - init\.sql
+  - db\.js
+  - database\.js
+  - db_config\.php
+  - database\.ini
+  - db\.properties
+  - hibernate\.cfg\.xml
+  - connection\.js
+  - knexfile\.js
+  - application\.properties
+  - alembic\.ini
+  - flyway\.conf
+  - v1__init\.sql
+  - pg_hba\.conf
+  - postgresql\.conf
+  - my\.ini
+  - my\.cnf
+  - postgresql\.conf
+  - \.gitignore
   - database.ini
-  - db.properties
-  - hibernate.cfg.xml
-  - connection.js
-  - knexfile.js
-  - application.properties
-  - alembic.ini
-  - flyway.conf
-  - v1__init.sql
-  - pg_hba.conf
-  - postgresql.conf
-  - my.ini
-  - my.cnf
-  - postgresql.conf
-  - .gitignore
+  - database.properties
 
 # List of documentation to retrieve from the GitHub API when scraping repositories
-DOC_FILES:
-  - doc
-  - docs
-  - documentation
-  - documentations
-  - readme
-  - readme.md
-  - contributing.md
-  - code_of_conduct.md
-  - changelog.md
-  - install.md
-  - license
-  - api.md
-  - security.md
-  - support.md
-  - governance.md
-  - faq.md
-  - styleguide.md
-  - todo.md
-  - authors
-  - credits.md
-  - dco.md
-  - changelog
-  - pull_request_template.md
+DOC_FILES_PATTERNS:
+  - doc[a-z]?
+  - readme\.(md|txt|rst)?
+  - contributing\.(md|txt|rst)?
+  - code_of_conduct\.(md|txt|rst)?
+  - changelog\.(md|txt|rst)?
+  - install\.(md|txt|rst)?
+  - license\.(txt|md)?
+  - security\.(md|txt|rst)?
+  - support\.(md|txt|rst)?
+  - governance\.(md|txt|rst)?
+  - faq\.(md|txt|rst)?
+  - styleguide\.(md|txt|rst)?
+  - todo\.(md|txt|rst)?
+  - authors\.(txt|md)?
+  - credits\.(md|txt|rst)?
+  - dco\.(md|txt|rst)?
+  - pull_request_template\.(md|txt|rst)?
+
+API_FILES_PATTERNS:
+  - swagger\.(json|yaml|yml)?
+  - openapi\.(json|yaml|yml)?
+  - postman_collection\.json
+  - api-spec\.(json|yaml|yml)?
+  - api-docs\.(json|yaml|yml)?
+  - api-[Dd]ocs\.(json|yaml|yml)?
+  - blueprint\.(json|yaml|yml|apib)?
+  - raml\.(json|yaml|yml|raml)?
+  - graphql\.(gql|graphql)?
+  - asyncapi\.(json|yaml|yml)?
+
+API_DIRS_PATTERNS:
+  - (?i)api
+  - (?i)docs?.?api
+  - (?i)swagger
+  - (?i)openapi
+  - (?i)postman
+  - (?i)spec(s?)\.?(api)?
+  - (?i)blueprint
+  - (?i)raml
+  - (?i)graphql
+  - (?i)asyncapi
 
 # Ignore directories containing static assets, build artifacts and third-party code
-UN_IMPORTANT_DIRS:
+UN_IMPORTANT_DIRS_PATTERNS:
   # Assests and Cache Directories
-  - images
-  - imgs
-  - img
-  - figures
-  - figure
-  - figs
-  - assets
-  - asset
-  - storage
-  - cache
-  - caches
-  - contents
-  - content
-  # Temporary Directories
-  - tmp
-  - temp
-  - draft
-  - drafts
+  - img[a-z]?
+  - fig[a-z]?
+  - asset[a-z]?
+  - storage[a-z]?
+  - cache[a-z]?
+  - tmp[a-z]?
+  - temp[a-z]?
+  - draft[a-z]?
   # Project outputs
-  - output
-  - outputs
-  - out
-  - outs
+  - out[a-z]?
   # Log Directories
-  - log
-  - logs
-  - error_logs
-  - session
-  - sessions
+  - log[a-z]?
+  - error_log[a-z]?
+  - session[a-z]?
   # Python and Build Artifacts
   - __pycache__
-  - bin
-  - build
-  - builds
-  - buildfiles
-  - dist
-  - dists
-  - distfiles
-  - distdir
+  - bin[a-z]?
+  - build[a-z]?
+  - dist[a-z]?
   # Dependency and Third-Party Directories
-  - .git
+  - \.git
   - 3rdparty
-  - vendor
-  - vendors
+  - vendors?
   - darwin
   - lib
   - node
   - node_modules
   # Testing Directories
-  - testing
-  - tests
-  - test
-  - test-results
-  - test-result
-  - testresults
-  - testresult
-  - test-suite
-  - test-suites
-  - testsuite
-  - testsuites
+  - test[a-z]?
+  - test-[a-z]?
+  - test_[a-z]?
 
 # List of CI/CD files to retrieve from the GitHub API when scraping repositories
-CI_CD:
+CI_CD_PATTERNS:
   .github/workflows/: GitHub Actions
-  bitbucket-pipelines.yml: Bitbucket
-
-  gitlab-ci.yml: GitLab CI
-  .gitlab-ci.yml: GitLab CI  
-  .gitlab-ci.yaml: GitLab CI  
-  gitlab-ci/: GitLab CI
-
-  circleci.yml: CircleCI
-  circle.yml: CircleCI
-  .circleci/config.yml: CircleCI  
-  .circleci/config.yaml: CircleCI  
-  .circleci/: CircleCI  
-
-  jenkins.yml: Jenkins  
-  jenkins.yaml: Jenkins  
-  jenkinsfile: Jenkins  
-  jenkinsfile.groovy: Jenkins  
-  jenkins/: Jenkins 
-
-  ansible.cfg: Ansible
-  playbooks/: Ansible
-
-  travis.yml: Travis CI  
-  .travis.yml: Travis CI  
-  .travis.yaml: Travis CI  
-
-  azure-pipelines.yml: Azure
-  cloudbuild.yaml: GCB 
-  cloudbuild.yml: GCB
-  buildspec.yml: AWS
-  template.yaml: AWS
-  cdk/: AWS 
-
-  dvc.yaml: DVC  
-  dvc.lock: DVC  
-  metrics.yaml: DVC  
-  .dvc/config: DVC  
-  model_registry/: MLFlow  
-  mlruns/: MLFlow  
-  mlflow.yml: MLFlow  
-  mlflow.yaml: MLFlow  
-    
-  appveyor.yml: AppVeyor
-  bamboo-specs/: Bamboo 
-  .teamcity/: TeamCity 
-  codeship.yml: Codeship  
-  codeship.yaml: Codeship  
-  codeclimate.yml: CodeClimate  
-  argo-cd/: Argo CD
-  application.yaml: Argo CD
+  bitbucket-pipelines.(yml|yaml): Bitbucket
+  (?:\.|^)gitlab-ci.(yml|yaml): GitLab CI 
+  circle(?:ci)?.(yml|yaml): CircleCI
+  (?:jenkinsfile(?:.groovy)?:|jenkins(?:\.)?(yml|yaml)): Jenkins
+  ansible.cfg|playbooks/: Ansible
+  (?:\.|^)buildspec.(yml|yaml)|template.(yml|yaml)|cdk/: AWS
+  (?:model_registry|mlruns)/|mlflow.(yml|yaml): MLFlow
+  (?:\.|^)travis.(yml|yaml): Travis CI
+  (?:\.|^)azure-pipelines.(yml|yaml): Azure 
+  (?:\.|^)cloudbuild.(yml|yaml): GCB 
+  (?:\.|^)dvc.(yml|yaml|lock)|metrics.(yml|yaml)|\.dvc/config: DVC
+  appveyor.(yml|yaml): AppVeyor
+  bamboo-specs/: Bamboo
+  .teamcity/: TeamCity
+  codeship.(yml|yaml): Codeship 
+  codeclimate.(yml|yaml): CodeClimate 
+  (?:argo-cd/|application.(yml|yaml)): Argo CD 
   openshift-pipelines/: OpenShift
-  master.cfg: Buildbot
-  go.cd/: GoCD
-  cruise-config.xml: GoCD
-  semaphore.yml: Semaphore
-  semaphore.yaml: Semaphore
-  spinnaker.yml: Spinnaker
-  spinnaker/: Spinnaker
-  harness.yaml: Harness
-  deploybot.yaml: DeployBot
-  katalon.yaml: Katalon
-  webapp.yaml: WebApp
+  master\.cfg: Buildbot
+  go\.cd/: GoCD
+  cruise-config\.xml: GoCD
+  semaphore.(yml|yaml): Semaphore
+  (?:spinnaker.(yml|yaml)|spinnaker/): Spinnaker
+  harness.(yml|yaml): Harness
+  deploybot.(yml|yaml): DeployBot
+  katalon.(yml|yaml): Katalon
+  webapp.(yml|yaml): WebApp
   cfengine/: CFEngine
   rudder/: Rudder
   rundeck/: RunDeck
   juju/: Juju
-  pom.xml: Maven
-  Dockerfile: Docker
-  docker-compose.yml: Docker
-  build.xml: Apache ANT
-  gruntfile.js: Grunt
-  packer.json: Packer
-  codemagic.yaml: Codemagic
-  buddy.yml: Buddy
-  deployhq.yml: DeployHQ
-
-
-# List of API documentation files to retrieve from the GitHub API when scraping repositories
-API_DOC_KEYWORDS:
-  - swagger
-  - openapi
-  - postman
-  - api docs
-  - rest api
-  - documentation
-  - endpoints
-  - swagger.json
-  - openapi.json
-  - postman_collection.json
-  - api-docs
-  - api-spec
+  pom\.xml: Maven
+  Dockerfile|docker-compose.(yml|yaml): Docker 
+  build\.xml: Apache ANT
+  gruntfile\.js: Grunt
+  packer\.json: Packer
+  codemagic.(yml|yaml): Codemagic
+  buddy.(yml|yaml): Buddy
+  deployhq.(yml|yaml): DeployHQ
 
 # HTTP Session configuration
 RETRY_FACTOR: 0.2
@@ -297,7 +234,7 @@ DATA_DIR: data  # Directory for storing scraped data
 LOG_DIR: logs  # Directory for storing log files
 
 # File paths for the output of the user and repository scrapers
-EGY_USERS_FILENAME:  egy_users.csv                # File path for user data
+USERS_FILENAME:  egy_users.csv                    # File path for user data
 EGY_USERS_REPOS_FILENAME: egy_users_repos.csv     # File path for repository data of Egyptian users
 NON_EGY_REPOS_FILENAME: non_egy_repos.csv         # File path for repository data of non-Egyptian users
 EGY_CONTRIBS_FILENAME: egy_contribs.csv           # File path for contributor data

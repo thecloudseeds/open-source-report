@@ -1,5 +1,6 @@
 
 import re
+import os
 import json
 import pandas as pd
 import seaborn as sns
@@ -17,8 +18,7 @@ def bar_plot(
     Plots a bar chart of the counts of repositories per feature. This is useful for visualizing the
     distribution of repository counts for any given feature (e.g. programming language, country, etc.).
 
-    Parameters
-    ----------
+    Args
         - df (pd.DataFrame): DataFrame containing the feature and count columns.
         - rotation (int): Rotation angle for the x-axis labels.
         - fontsize (int): Font size for the title and labels.
@@ -56,52 +56,72 @@ def bar_plot(
                 bbox=dict(facecolor='white', alpha=0.5,
                           boxstyle='round,pad=0.4')
             )
+    
+    # Save the figure with the title in lowercase and separated by "-"
+    title_safe = feature.lower().replace(" ", "_")  # Replace spaces with hyphens
+    plt.savefig(os.path.join("./results", f"{title_safe}.png"), bbox_inches='tight')
 
     # Make sure the plot looks nice and isn't too squished
     plt.tight_layout()
     plt.show()
 
-
-def plot_histograms(data, columns, palette_color, figsize=(15, 4)):
+def plot_histograms(df, palette_color: list = [], figsize=(15, 15)):
     """
-    Plot histograms for the given columns in the data.
-
-    Parameters
-    ----------
-        - data (pandas.DataFrame): The DataFrame containing the data to plot.
-        - columns (list): A list of column names to plot.
-        - palette_color (list) : A list of colors to use for the histograms.
-        - figsize (tuple): The size of the figure in inches, by default (15, 4)
+    Plot histograms for the given columns in the data using subplots.
+    
+    Args:
+        - df (pandas.DataFrame): The DataFrame containing the data to plot.
+        - palette_color (list): A list of colors to use for the histograms.
+        - figsize (tuple): The size of the figure in inches, by default (15, 15)
     """
-    fig, axes = plt.subplots(1, len(columns), figsize=figsize)
+    sns.set_style("darkgrid")
+    # Create a color palette for the histograms
+    num_columns = len(df.columns)
+    if len(palette_color) < num_columns:
+        palette_color = sns.dark_palette("blue", n_colors=num_columns)
+
+    # Calculate the number of rows needed based on the number of columns
+    num_rows = (num_columns + 2) // 3  # 3 plots per row
+
+    # Create subplots with dynamic rows and columns
+    fig, axes = plt.subplots(num_rows, 3, figsize=figsize)
+    axes = axes.flatten()  # Flatten the axes array for easy indexing
 
     # Iterate over the columns and plot the histogram for each one
-    for i, column in enumerate(columns):
-        axes[i].hist(data[column], color=palette_color[i])
-        axes[i].set_title(f"Distribution of {column}")
-        axes[i].set_xlabel(f"Number of {column}")
-        axes[i].set_ylabel("Frequency")
+    for i, column in enumerate(df.columns):
+        if pd.api.types.is_numeric_dtype(df[column]):
+            axes[i].hist(df[column], color=palette_color[i], bins=30)  # Adjust the number of bins as necessary
+            axes[i].set_title(f"Distribution of {column}")
+            axes[i].set_xlabel(f"Number of {column}")
+            axes[i].set_ylabel("Frequency")
+            axes[i].grid(axis='y', alpha=0.75)  # Add gridlines for better visibility
+        else:
+            print(f"Column {column} is not numeric. Skipping.")
+
+    # Hide any unused subplots
+    for j in range(i + 1, len(axes)):
+        axes[j].axis('off')  # Hide axes for empty plots
+
+    # Save the figure with the title in lowercase and separated by "-"
+    title_safe = column.lower().replace(" ", "_")  # Replace spaces with hyphens
+    plt.savefig(os.path.join("./results", f"{title_safe}.png"), bbox_inches='tight')
 
     # Make sure the plot looks nice and isn't too squished
     plt.tight_layout()
     plt.show()
-
 
 def top_ranked_repos(df, feature,
                      figsize=(15, 6),
                      n=20, rotation=45):
     """
     Plot the top n repositories in Egyptian Open Source projects according to the number of given feature.
-
-    Parameters:
-    ----------
+    Args:
         - df (pandas.DataFrame): The DataFrame containing the data of the repositories.
         - feature (str): The column name of the feature to rank the repositories by. 
         - figsize (tuple): The size of the figure in inches, by default (15, 6).
         - n (int): The number of top repositories to show, by default 20.
         - rotation (int): The rotation of the x-axis labels, by default 45.
     Returns:
-    --------
         - top_repos (pandas.DataFrame): A DataFrame containing the top n repositories.
     """
     palette_color = sns.color_palette('RdBu', 10)
@@ -162,12 +182,6 @@ def detect_language(repo: Dict[str, Any]) -> Optional[str]:
     Returns:
         Optional[str]: The detected programming language or None if not detected.
     """
-    # Check if the necessary fields are present and of correct types
-    if not (isinstance(repo.get('repo_description'), str) and
-            isinstance(repo.get('topics'), str) and
-            isinstance(repo.get('filenames'), list)):
-        # If any of the fields are not present or of incorrect type, return None
-        return None
 
     with open("./data/json_files/languages_keywords.json", "r", encoding='utf-8') as file:
         # Load the json file containing the language keywords
@@ -177,8 +191,9 @@ def detect_language(repo: Dict[str, Any]) -> Optional[str]:
     # Split the text into individual words and convert to lower case to ignore case differences
     text_words = set(
         repo['repo_description'].lower().split() +
-        repo['topics'].lower().split(",")
-    )
+        repo['topics'].lower().split(",")     )
+    
+    filenames = repo['db_files'] + repo['api_files'] + repo['cicd_files']
 
     # Check against known languages
     for lang, identifiers in languages_keywords.items():
@@ -188,10 +203,10 @@ def detect_language(repo: Dict[str, Any]) -> Optional[str]:
             if word in text_words:
                 return lang
 
-        for file in repo['filenames']:
+        for file in filenames:
             # If any of the keywords match the file extensions in the repository, then the language is detected
             if file.endswith(tuple(identifiers)):
                 return lang
 
     # If no language is detected, return None
-    return None
+    return ''

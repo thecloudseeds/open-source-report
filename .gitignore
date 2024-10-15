@@ -1,45 +1,45 @@
 # Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]  # Ignore Python bytecode files
+__pycache__/              # Ignore Python bytecode files
+*.py[cod]                 # Ignore Python bytecode files
 
 # Jupyter Notebook
-.ipynb_checkpoints/  # Ignore Jupyter notebook checkpoints
+.ipynb_checkpoints/       # Ignore Jupyter notebook checkpoints
+draft*.ipynb              # Ignore draft Jupyter notebooks
 
 # PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
-__pypackages__/
+__pypackages__/           # Ignore PEP 582 packages
 
 # Log files
-.gd/
-logs/
-*.log  # Ignore log files
-*.log.*  # Ignore rotated log files
+.gd/                      # Ignore Google Drive logs
+logs/                     # Ignore logs directory
+*.log                     # Ignore log files
+*.log.*                   # Ignore rotated log files
 
 # Environment variables
-.env  # Ignore environment variable files
+.env                      # Ignore environment variable files
 
 # Data files
-data/  # Ignore the entire data directory
-tests/
-nltk_data/
+data/                     # Ignore the entire data directory
+tests/                    # Ignore test files
+nltk_data/                # Ignore NLTK data files
 
 # Virtual environments
-.venv/  # Ignore the virtual environment directory
-env/    # Ignore alternative virtual environment directories
-venv/
+.venv/                    # Ignore the virtual environment directory
+env/                      # Ignore alternative virtual environment directories
+venv/                     # Ignore alternative virtual environment directories
 
 # IDE specific files
-.vscode/  # Ignore VSCode settings
-.idea/    # Ignore JetBrains IDE settings
+.vscode/                  # Ignore VSCode settings
+.idea/                    # Ignore JetBrains IDE settings
 
 # Operating System specific files
-Thumbs.db  # Ignore Windows thumbnail cache files
+Thumbs.db                 # Ignore Windows thumbnail cache files
 
 # Temporary files
-*.tmp  # Ignore temporary files
-*.bak  # Ignore backup files
-*.zip
+*.tmp                     # Ignore temporary files
+*.bak                     # Ignore backup files
+*.zip                     # Ignore zip files
 
 # Ignore specific file types
-*.syc  
-draft*.ipynb
-/data
+*.syc                     # Ignore specific file type
+/data                     # Ignore specific directory

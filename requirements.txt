@@ -1,27 +1,29 @@
-# Core Libraries
-pandas==2.2.2
+# Data Processing
 numpy==1.26.0
+pandas==2.2.2
 
-# Web Scraping
+# Web and API
 requests==2.32.3
 beautifulsoup4==4.12.3
 
-# Visualization
-matplotlib==3.6.0
-seaborn==0.12.0
-WordCloud==1.9.3
+# Machine Learning and visualization
 bertopic==0.16.3
+matplotlib==3.6.0
+seaborn==0.12.2
+WordCloud==1.9.3
+nltk==3.9.1
+
+# Google Cloud and GDrive Interaction
+google-api-python-client==2.149.0
+google-auth==2.35.0
+oauth2client==4.1.3
+google-auth-oauthlib==1.0.0 
+pydrive2>=1.19.0
 
 # Development Tools
+dvc==3.55.2
 python-dotenv==1.0.1
 ipykernel==6.29.5
 pylint==3.3.1
 autopep8==2.3.1
 tqdm==4.66.5
-
-# Handle Text
-fuzzywuzzy==0.18.0
-Levenshtein==0.26.0 
-python-Levenshtein==0.26.0 
-rapidfuzz==3.10.0
-nltk==3.9.1

@@ -25,3 +25,5 @@ __pycache__
 *.pyc
 *.py[cod
 *.zip
+
+results/certificate.jpg

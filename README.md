@@ -26,7 +26,7 @@ This project leverages GitHub data to extract valuable insights about Egyptian o
 
 ## Project Workflow
 
-![project workflow](./results/Egy-OpenSource-contribution.png)
+![project workflow](https://github.com/codequest/open-source-analysis-noteboo/blob/main/results/Egy-OpenSource-contribution.png)
 
 ## Structure
 

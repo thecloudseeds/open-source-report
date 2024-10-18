@@ -103,7 +103,7 @@ class GitHubAPI:
         logging.basicConfig(
             filename=log_file_path,
             format="%(asctime)s - %(levelname)s - %(lineno)d - %(message)s",
-            level=logging.DEBUG  # Set level to DEBUG for detailed logging
+            level=logging.INFO  # Set level to DEBUG for detailed logging
         )
 
         return logging.getLogger(__name__)

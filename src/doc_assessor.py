@@ -1,13 +1,10 @@
 import re
-import csv
 import ast
 import json
 import base64
 import binascii
 
-from typing import Dict, List
-from urllib.parse import urljoin
-from bs4 import BeautifulSoup
+from typing import Dict
 from src.github_api import GitHubAPI
 
 
@@ -17,172 +14,153 @@ class GitHubDocAssessor(GitHubAPI):
     """
 
     def __init__(self):
-        super().__init__()
-
-        self.row = None
-        self.base_url = ""
-        # Cache for filenames and readme content. So that we don't have to fetch the filenames multiple times.
-        self.doc_files, self.api_files = set(), set()
-
-        # The API documentation keywords are the words that are used to search for API documentation.
-        # We use a regular expression to search for these words in the repository's description and topics.
-        api_doc_keywords = r"\b(?:swagger|openapi|postman|api\s*docs|rest\s*api|documentation|endpoints|swagger\.json|openapi\.json|postman_collection\.json|api-[Dd]ocs|api-spec)\b"
-        self.api_doc_keywords = re.compile(api_doc_keywords)
-
-    def get_readme_content(self) -> str:
         """
-        This method is used to fetch the content of the README file in the repository.
-        It handles cases where the README filename is stored incorrectly in the file (e.g., readme.md instead of README.md).
+        Initializes the GitHubDocAssessor class, setting up necessary attributes.
 
+        base_url: The base URL of the repository.
+        doc_files: A set of relevant documentation files.
+        api_files: A set of API documentation files.
+        """
+        super().__init__()
+        self.base_url = None
+        self.doc_files = None  # A set of relevant documentation files
+        self.api_files = None  # A set of API documentation files
+
+    def decode_file(self, response: Dict) -> str:
+        """
+        Decode file content based on the encoding.
+        Args:
+        ------
+            response (Dict): The response from the GitHub API containing the file content.
         Returns:
         --------
-            The content of the README file.
+            str: The decoded content of the file.
         """
-        # Search for README file, considering potential case mismatch
-        readme_files = [f for f in self.doc_files if 'readme' in f.lower()]
+        try:
+            content = response.get("content", "")
+            if not content:
+                return ""
 
-        # If no README file is found, we set the content to an empty string.
-        if not readme_files:
-            self.logger.info(f"No README file found for this repo")
-            return ""
+            encoding = response.get("encoding", "utf-8")
+            if encoding == "base64":
+                # Decode base64 content
+                content = base64.b64decode(content).decode(
+                    "utf-8", errors="replace")
+            elif encoding == "hex":
+                # Decode hex content
+                content = bytes.fromhex(content).decode(
+                    "utf-8", errors="replace")
 
-        # Add common README variants
-        readme_files.extend(["README.md", "README"])
+            # Check if the content is binary using magic numbers
+            if content.startswith(b'\x89PNG') or content.startswith(b'\xFF\xD8'):
+                self.logger.info(
+                    "Binary file detected. Replacing binary content.")
+                content = "[Binary content skipped]"
+
+        except (binascii.Error, UnicodeDecodeError, TypeError) as e:
+            self.logger.error("Error decoding file content: %s", e)
+
+        return content
+
+    def readme_guidelines_score(self) -> int:
+        """Check README for common sections and return a score based on presence.
+
+        This function assesses the quality of a repository's README file by checking
+        for the presence of common sections like contributing guidelines, how-to-run
+        instructions, and tutorials or examples.
+        """
+        contributing_pattern = r"(?i)(?:contributing|contributions|contribution)"
+        run_instructions_pattern = r"(?i)(?:run|start|install|use|get\s+started|quickstart|installation)"
+        tutorial_pattern = r"(?i)(?:tutorial|example|tutorials|examples|usage|use\s+cases|applications)"
+
+        score = 0
+
+        # Iterate over the files and search for common sections in their content
         readme_content = ""
-        # Iterate over the README files and fetch their content
-        for readme_file in readme_files:
-            # Construct the URL of the README file
+
+        for readme_file in [f for f in self.doc_files if 'readme' in f.lower()]:
+
+            self.logger.info("Checking README file: %s", readme_file)
             readme_url = f"{self.base_url}/contents/{readme_file}"
-            self.logger.debug(f"Fetching README file from: {readme_url}")
             response = self._get(readme_url)
 
-            try:
-                # Get encoding from response
-                encoding = response["encoding"]
-                self.logger.info(f"Response encoding: {encoding}")
-                if encoding == "base64":
-                    # Decode the base64 encoded content
-                    readme_content += base64.b64decode(
-                        response["content"]).decode("utf-8")
-                elif encoding == "hex":
-                    # Decode the hex encoded content
-                    readme_content += bytes.fromhex(
-                        response["content"]).decode("utf-8")
-                else:
-                    # Decode the content using the specified encoding
-                    readme_content += response["content"].encode(
-                        encoding).decode("utf-8")
+            if not response:
+                readme_file = readme_file.lower()
+                readme_url = f"{self.base_url}/contents/{readme_file}"
+                response = self._get(readme_url)
 
-            except (binascii.Error, UnicodeDecodeError, OSError) as e:
-                # Handle any errors that occur while decoding the README content
-                self.logger.warning(
-                    "Error while decoding README content: %s", e)
+                if not response:
+                    self.logger.warning(
+                        "Failed to fetch README file: %s", readme_file)
+                    continue
 
-        return readme_content
+            readme_content += self.decode_file(response)
 
-    def check_readme_guidelines(self, readme_content) -> int:
-        """
-        Checks a README file for contributing guidelines, how-to-run instructions, and other common sections.
+        self.logger.info("Decoded readme Content: %s", readme_content)
 
-        Returns:
-        --------
-            A score representing the number of guidelines found in the README.
-        """
-        # A list of regular expressions representing the guidelines we want to check for.
-        # We use case-insensitive matching to make sure we catch variations in capitalization.
-        guidelines = [
-            # Check for contributing guidelines
-            r'(?:contributing|contributions|contribution)',
-            # Check for getting started or quickstart instructions
-            r'(?:run|start|install|use|get started|getting started|quickstart|installation)',
-            # Check for tutorials or example code
-            r'(?:tutorial|example|tutorials|examples|usage|use cases|applications|use case|application)'
-        ]
+        if re.search(contributing_pattern, readme_content, re.IGNORECASE):
+            self.logger.info("Found contributing guidelines.")
+            # Score +1 for having a contributing guidelines section
+            score += 1
+        if re.search(run_instructions_pattern, readme_content, re.IGNORECASE):
+            self.logger.info("Found how-to-run instructions.")
+            # Score +1 for having a how-to-run instructions section
+            score += 1
+        if re.search(tutorial_pattern, readme_content, re.IGNORECASE):
+            self.logger.info("Found tutorials or examples.")
+            # Score +1 for having a tutorials or examples section
+            score += 1
 
-        # Log the guidelines we're checking for
-        self.logger.debug(f"Checking guidelines: {guidelines}")
+        self.logger.info("Readme scoring result: %s out of 3.", score)
 
-        if readme_content == '':
-            return 0
-
-        readme_score = 0
-        for guideline in guidelines:
-            if re.search(guideline, readme_content, re.IGNORECASE):
-                self.logger.info(f"Found guideline: {guideline}")
-                readme_score += 1
-            else:
-                self.logger.info(f"Did not find guideline: {guideline}")
-
-        self.logger.info(f"Readme score: {readme_score}")
-
-        return readme_score
-
-    # def check_api_documentation(self, readme_content) -> int:
-    #     """
-    #     Checks for the presence of API documentation links or files within a repository.
-
-    #     Returns:
-    #     --------
-    #         - 3 points if API documentation links or files are found.
-    #         - 0 points if no API documentation is found.
-    #     """
-    #     # Check if the repository's description or topics contain API documentation keywords
-    #     if self.api_doc_keywords.search(self.row['repo_description']) or \
-    #             self.api_doc_keywords.search(self.row['topics']):
-    #         self.logger.info(
-    #             "Found API documentation keywords in description or topics.")
-    #         return 2
-
-    #     # Check if the repository's README file contains API documentation keywords
-    #     if self.api_doc_keywords.search(readme_content):
-    #         self.logger.info(
-    #             "Found API documentation keywords in the README file.")
-    #         return 2
-
-    #     # Search for API documentation files in the repository's files
-    #     for api_pattern in self.config['API_FILES_PATTERNS']:
-    #         if self.api_files):
-    #             self.logger.info(
-    #                 "Found API documentation file matching pattern: %s", api_pattern)
-    #             return 3
-    #     # No API documentation found
-    #     self.logger.info("No API documentation found in the repository.")
-    #     return 0
+        return score
 
     def assess_repo_doc(self, row: Dict) -> int:
         """
-        Assesses the documentation quality of a repository based on the presence
-        of specific files, content, and links.
-        Args:
-        -----
-            row (Dict): A dictionary containing the repository information.
-        Returns:
-        --------
-            A score representing the overall documentation quality.
+        Assesses repository documentation and returns a quality score.
+
+        The score is a sum of the following components:
+        - Presence of repository description: 1 point
+        - Presence of API documentation files: 3 points
+        - Presence of common sections in the README file: 1 point for each of the following sections:
+            - Contributing guidelines
+            - How-to-run instructions
+            - Tutorials or examples
         """
-        self.row = row
-        # Fetch the base URL for the repository
-        self.base_url = f"{self.config['API_BASE_URL']}/repos/{self.row['owner']}/{self.row['repo_name']}"
-        # Fetch the list of documentation files and api_files in the repository
-        self.doc_files = set(ast.literal_eval(self.row['doc_files']))
-        self.api_files = set(ast.literal_eval(self.row['api_files']))
 
-        # Repo description, topic and tags score
-        basic_desc = self.row['repo_description'] + \
-            self.row['topics']+self.row['tags']
-        repo_desc = 1 if basic_desc else 0
+        self.base_url = f"{self.config['API_BASE_URL']}/repos/{row['owner']}/{row['repo_name']}"
 
-        # Check for API documentation
-        api_scroe = 3 if self.api_files else 0
+        try:
+            # Parse the file lists from the row
+            self.doc_files = set(ast.literal_eval(row['doc_files']))
+            self.api_files = set(ast.literal_eval(row['api_files']))
+        except:
+            self.doc_files = set(row['doc_files'])
+            self.api_files = set(row['api_files'])
 
-        # Readme content and guidelines assessment
-        readme_content = self.get_readme_content()
-        readme_score = self.check_readme_guidelines(readme_content)
+        # Compute the basic scores
+        try:
+            basic_desc = row['repo_description'] + row['topics']
+        except TypeError:
+            basic_desc = ""
 
-        # Total score calculation
-        total_score = (repo_desc + readme_score + api_scroe)
+        repo_desc = 1 if not basic_desc else 0
 
-        self.logger.info("Repository %s has score: %s.",
+        # Determine the exsitance of api and doc files
+        api_score = 3 if self.api_files else 0
+        doc_files_score = 1 if self.doc_files else 0
+
+        # Compute the score for the README file
+        if self.doc_files:
+            self.logger.info("Checking Dic_file %s", self.doc_files)
+            readme_score = self.readme_guidelines_score()
+        else:
+            readme_score = 0
+
+        # Compute the total score
+        total_score = repo_desc + api_score + readme_score + doc_files_score
+
+        self.logger.info("Repo %s scored: %s out of 8",
                          self.base_url, total_score)
 
         return total_score

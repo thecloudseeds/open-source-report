@@ -190,12 +190,13 @@ def plot_categories(
         plot_bar_chart(ax1, df, feature, y, fontsize, palette_color, rotation)
         plot_pie_chart(ax2, df, feature, y, fontsize, palette_color)
 
+    plt.tight_layout()
+
     # Save the figure
     title_safe = feature.lower().replace(" ", "_")
     os.makedirs("./results", exist_ok=True)
     plt.savefig(f"./results/{title_safe}.png", bbox_inches='tight')
 
-    plt.tight_layout()
     plt.show()
 
 
@@ -241,49 +242,12 @@ def plot_histograms(
         axes[j].axis('off')  # Hide axes for empty plots
 
     # Create a title for the entire figure
-    figure_title = "Histograms of Numerical Features"
-    fig.suptitle(figure_title, fontsize=fontsize + 3)
-
+    # figure_title = "Histograms of Numerical Features"
+    # fig.suptitle(figure_title, fontsize=fontsize + 3)
+    plt.tight_layout()
     # Save the figure with a title based on the first column
     os.makedirs("./results", exist_ok=True)  # Ensure the directory exists
     plt.savefig(f"./results/numerical_features_distribution.png",
                 bbox_inches='tight')
 
-    plt.tight_layout()
     plt.show()
-
-
-# def top_ranked_repos(df, feature,
-#                      figsize=(15, 6),
-#                      n=20, rotation=45):
-#     """
-#     Plot the top n repositories in Egyptian Open Source projects according to the number of given feature.
-#     Args:
-#         - df (pandas.DataFrame): The DataFrame containing the data of the repositories.
-#         - feature (str): The column name of the feature to rank the repositories by.
-#         - figsize (tuple): The size of the figure in inches, by default (15, 6).
-#         - n (int): The number of top repositories to show, by default 20.
-#         - rotation (int): The rotation of the x-axis labels, by default 45.
-#     Returns:
-#         - top_repos (pandas.DataFrame): A DataFrame containing the top n repositories.
-#     """
-#     palette_color = sns.color_palette('RdBu', 10)
-#     plt.figure(figsize=figsize)
-
-#     # Get the top n repositories
-#     top_repos = df.sort_values(by=feature, ascending=False).head(n)
-
-#     sns.barplot(x=top_repos['repo_name'],
-#                 y=top_repos[feature], palette=palette_color)
-
-#     plt.title(
-#         f"Top {n} Repositories in Egyptian Open Source Projects According to the Number {feature}", fontsize=16)
-
-#     plt.xlabel("Repository Name", fontsize=16)
-#     plt.ylabel(f"{feature}", fontsize=16)
-
-#     plt.xticks(rotation=rotation, ha="right", fontsize=12)
-#     plt.tight_layout()
-#     plt.show()
-
-#     return top_repos

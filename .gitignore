@@ -1,7 +1,7 @@
 # Ignore specific file types
 tests/
 nltk_data/
-/data
+
 draft*.ipynb
 
 # Environment variables

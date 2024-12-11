@@ -12,6 +12,8 @@ import requests
 from urllib3.util.retry import Retry
 from requests.adapters import HTTPAdapter
 
+# 5000 requests per hour = 1.38 seconds per request
+throttle_delay = 5000 / 60 / 60
 
 class GitHubAPI:
     """
@@ -192,6 +194,7 @@ class GitHubAPI:
         """
         Makes a GET request to the GitHub API.
         """
+        time.sleep(throttle_delay)
         session = self.create_retry_session()
         response = session.get(url, headers=self.headers, params=params)
 
